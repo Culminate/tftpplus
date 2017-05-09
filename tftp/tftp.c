@@ -71,6 +71,7 @@ extern  int     maxtimeout;
 extern sigjmp_buf toplevel;
 void sendfile(int fd, char *name, char *modestr);
 void recvfile(int fd, char *name, char *modestr);
+void lsrecv(int cnt,char *name);
 
 static struct sockaddr_storage from;	/* most recent remote address */
 static socklen_t fromlen;
@@ -219,6 +220,7 @@ recvfile(int fd, char *name, char *mode)
 	struct tftphdr *dp;
 	volatile int size = 0;
 	volatile u_int16_t block = 1;
+
 	int n; 
 	volatile unsigned long amount = 0;
 	volatile int firsttrip = 1;
@@ -444,3 +446,79 @@ printstats(const char *direction, unsigned long amount)
 	putchar('\n');
 }
 
+void lsrecv(int cnt,char *name)
+{
+    register struct tftphdr *ap;       /* data and ack packets не используется пока */
+    struct tftphdr *dp;                 // структура с данными
+    volatile int firsttrip = 1;
+    volatile u_int16_t block = 1;
+
+    memcpy(&from, &s_inn, sizeof(from));
+    fromlen = s_inn_len;
+
+    int n;
+    char buf[PKTSIZE];  //буфер данных 512 байт
+    ap = (struct tftphdr *)ackbuf;
+    dp = (struct tftphdr *)buf;         //установка указателя на начало буфера CHAR
+    volatile int size = 0;
+    char str[512];
+
+    // обнуляем буфер, чтоб не было случайных лишних символов в выводе
+    for(n = 0;n < 516;n++){
+        buf[n]='\0';
+    }
+
+    mysignal(SIGALRM, timer);
+    do{
+        if (firsttrip) {
+        size = makerequest(LSD, name, ap, "netascii");  //создаем запрос на чтение файлов в каталоге
+        firsttrip = 0;} else {
+            ap->th_opcode = htons((u_short)ACK);
+            ap->th_block = htons((u_short)(block));
+            size = 4;
+            block++;
+        }
+        timeout = 0;
+        (void) sigsetjmp(timeoutbuf, 1);
+send_ack:
+        n = sendto(f, ackbuf, size, 0, (struct sockaddr *)&from, fromlen);   //посылаем
+        if ( n != size) {
+            alarm(0);
+            perror("tftp: sendto");
+            return;
+        }
+
+        for(;;)
+        {
+            alarm(rexmtval);
+            do  {
+                fromlen = sizeof (from);
+                n = recvfrom(f, dp, PKTSIZE, 0,(struct sockaddr *)&from, &fromlen); //принимаем пакет
+                if (n>0) break;
+            } while (n <= 0);
+            alarm(0);
+            dp->th_opcode = ntohs(dp->th_opcode);
+            dp->th_block = ntohs(dp->th_block);
+            if (dp->th_opcode == ERROR) {
+                printf("Error code %d: %s\n", dp->th_code,
+                    dp->th_msg);
+            }
+
+            if (dp->th_opcode == DATA) {
+                if (dp->th_block == block) {
+                    break;          /* have next packet */
+                }
+                /* On an error, try to synchronize
+                 * both sides.
+                 */
+                synchnet(f, trace);
+                if (dp->th_block == (block-1)) {
+                    goto send_ack;  /* resend ack */
+                }
+            }
+        }
+        size = strlen(dp->th_data);
+        printf(" %s \n",dp->th_data);
+    }while(size == SEGSIZE);
+
+}

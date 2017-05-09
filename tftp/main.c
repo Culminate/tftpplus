@@ -78,6 +78,7 @@ int maxtimeout = 5 * TIMEOUT;
 sigjmp_buf toplevel;
 void sendfile(int fd, char *name, char *modestr);
 void recvfile(int fd, char *name, char *modestr);
+void lsrecv(int cnt,char *name);
 
 
 static int connected = AF_UNSPEC;	/* If non-zero, contains active address family! */
@@ -109,6 +110,7 @@ void setascii(int argc, char *argv[]);
 void setmode(const char *newmode);
 void putusage(const char *s);
 void getusage(const char *s);
+void ls(int argc, char *argv[]);
 
 #define HELPINDENT ((int) sizeof("connect"))
 
@@ -131,6 +133,7 @@ char	xhelp[] = "set per-packet retransmission timeout";
 char	ihelp[] = "set total retransmission timeout";
 char    ashelp[] = "set mode to netascii";
 char    bnhelp[] = "set mode to octet";
+char	lshelp[] = "give list files in a directory";
 
 struct cmd cmdtab[] = {
 	{ "connect",	chelp,		setpeer },
@@ -145,6 +148,7 @@ struct cmd cmdtab[] = {
 	{ "ascii",      ashelp,         setascii },
 	{ "rexmt",	xhelp,		setrexmt },
 	{ "timeout",	ihelp,		settimeout },
+    { "ls",		lshelp,		ls },
 	{ "?",		hhelp,		help },
 	{ 0,0,0 }
 };
@@ -809,4 +813,36 @@ setverbose(int ign1, char *ign2[])
 	(void)ign2;
 	verbose = !verbose;
 	printf("Verbose mode %s.\n", verbose ? "on" : "off");
+}
+
+ls(int argc, char *argv[])
+{
+    char namepath[100];
+    char tmpstr[100];
+
+    int nonBlocking = 1;    //ставим его в неблокирующий режим (в блок режиме прога завистнет пока на порт не придет сообщение)
+            if ( fcntl( f, F_SETFL, O_NONBLOCK, nonBlocking ) == -1 )
+            {
+                printf( "failed to set non-blocking socket\n" );
+
+            }
+    //if (argc>1) strcpy(namepath,argv[1]);
+    if (argc>1){
+        strcpy(namepath,argv[1]);
+        if (namepath[0] != '/'){
+            strcpy(tmpstr,"/");
+            strcat(tmpstr,namepath);
+            strcpy(namepath,tmpstr);
+        }
+        if (namepath[strlen(namepath)-1] != '/'){
+            strcat(namepath,"/");
+        }
+        if (strstr(namepath,"/../")!=NULL){
+            printf("Folder error: Access violation \n");
+            return 0;
+        }
+    }
+    if (argc == 1) strcpy(namepath,"/.\0");
+
+    lsrecv(argc,namepath);   //переходим в tftp.c
 }

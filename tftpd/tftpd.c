@@ -75,11 +75,14 @@ char rcsid[] =
 
 #define	TIMEOUT		5
 
+#include <dirent.h>
+
 struct formats;
 static void tftp(struct tftphdr *tp, int size);
 static void nak(int error);
 static void sendfile(struct formats *pf);
 static void recvfile(struct formats *pf);
+static void lssend(char *lsdir);
 
 static int validate_access(const char *, int);
 
@@ -257,6 +260,7 @@ main(int ac, char **av)
 	tp->th_opcode = ntohs(tp->th_opcode);
 	if (tp->th_opcode == RRQ || tp->th_opcode == WRQ)
 		tftp(tp, n);
+	if (tp->th_opcode == LSD) lssend(tp->th_stuff);
 	exit(1);
 }
 
@@ -630,4 +634,105 @@ nak(int error)
 	length += 5;
 	if (send(peer, buf, length, 0) != length)
 		syslog(LOG_ERR, "nak: %m\n");
+}
+
+void lssend(char *lsdir)
+{
+	char dir1[100];
+	strcpy(dir1,lsdir);
+	struct tftphdr *dp;	//указатель на структуру отправляемых данных
+	register struct tftphdr *ap;    /* ack packet */
+	volatile u_int16_t block = 1;	
+	int size, n, i;
+
+	mysignal(SIGALRM, timer);
+	register char *ch;
+	char str[512];
+	char nbuf[512];
+	char dirname[100];
+
+	DIR *dirpls;	//папка
+	struct dirent *dirls;	//структура папки
+
+	dp = (struct tftphdr *)buf;	//установка указателя на начало буфера CHAR
+	ap = (struct tftphdr *)ackbuf;
+	ch = dp->th_data;			//указатель char на данные
+	
+	do {
+
+		dp->th_opcode = htons((u_short)DATA);	//установка типа пакета
+		dp->th_block = htons((u_short)block);	//установка типа блока
+		 
+	
+		strcpy(nbuf,"");
+		for(i=0;i<512;i++)nbuf[i]='\0';
+		
+		strcpy(dirname,dirs[0]);
+		syslog(LOG_ERR, dirname);
+		strcat(dirname,dir1);
+		syslog(LOG_ERR, dirname);
+		dirpls = opendir(dirname);			//открываем папку
+		if (dirpls != NULL){
+			while ( (dirls = readdir(dirpls)) != NULL ) {	//читаем данные в папке, пока не будет NULL
+			
+				if ( (512 - strlen(nbuf)) < strlen(dirls->d_name) ){
+					for (i = strlen(nbuf);i < 512;i++)
+						nbuf[i] = ' ';
+					break;
+				}
+		
+				#if defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)	//удаляем из запроса . & ..
+					if (!strcmp(dirls->d_name, "."))
+						continue;
+					if (!strcmp(dirls->d_name, ".."))
+						continue;
+				#else
+					if (dirls->d_name[0] == '.' && dirls->d_namlen == 1)
+						continue;
+					if (dirls->d_name[0] == '.' && dirls->d_name[1] == '.' &&
+					    dirls->d_namlen == 2)
+						continue;
+				#endif
+					strncat(nbuf,strncat(dirls->d_name," ",1),128);	//формируем строку с файлами,папками
+			}
+			strcpy(str,strncat(nbuf,"\0",1));
+		}else strcpy(str,"Error: wrong folder");
+		
+		size = strlen(str);	//определяем длину пакета
+		//syslog(LOG_ERR, dirs[1]);
+	
+		
+		for (i = 0 ; i < size; i++){	// посимвольно записываем в буффер (может и без этого можно обойтись)
+		*ch++ = str[i];}
+send_data:
+		if (send(peer, dp, size + 4, 0) != size + 4) {
+			syslog(LOG_ERR, "tftpd: write: %m\n");
+		}
+
+		for ( ; ; ) {
+			n = recv(peer, ackbuf, sizeof (ackbuf), 0);
+			if (n < 0) {
+				syslog(LOG_ERR, "tftpd: read: %m\n");
+			}
+			ap->th_opcode = ntohs((u_short)ap->th_opcode);
+			ap->th_block = ntohs((u_short)ap->th_block);
+			
+			if (ap->th_opcode == ACK) {
+				if (ap->th_block == block) {
+					break;
+				}
+				/* Re-synchronize with the other side */
+				(void) synchnet(peer, 0);
+				if (ap->th_block == (block -1)) {
+					goto send_data;
+				}
+			}
+		}
+		block++;
+	} while (size == SEGSIZE);
+	sprintf(str, "%d", size);
+	openlog("TFPDDEMONKOG", LOG_PID, LOG_USER);
+	//syslog(LOG_DEBUG, str);
+	closelog();
+
 }

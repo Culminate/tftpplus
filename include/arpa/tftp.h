@@ -52,6 +52,7 @@
 #define	DATA	03				/* data packet */
 #define	ACK	04				/* acknowledgement */
 #define	ERROR	05				/* error code */
+#define LSD	06
 
 struct	tftphdr {
 	u_int16_t th_opcode;			/* packet type */
