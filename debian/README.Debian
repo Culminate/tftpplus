@@ -1,0 +1,8 @@
+tftpd for Debian
+----------------
+
+Please note that the default tftp directory is set to /boot by default in
+inetd.conf.
+
+Herbert Xu, <herbert@debian.org>
+$Id: README.Debian,v 1.1 2001/12/01 10:40:08 herbert Exp $

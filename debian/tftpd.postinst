@@ -1,0 +1,17 @@
+#!/bin/sh -e
+# $Id: tftpd.postinst,v 1.1 1999/10/26 04:43:01 herbert Exp $
+
+case "$1" in
+abort-upgrade | abort-deconfigure | abort-remove)
+	update-inetd --enable tftp
+	;;
+configure)
+	update-inetd --group BOOT --add "tftp		dgram	udp	wait	nobody	/usr/sbin/tcpd	/usr/sbin/in.tftpd /srv/tftp"
+	;;
+*)
+	printf "$0: incorrect arguments: $*\n" >&2
+	exit 1
+	;;
+esac
+
+#DEBHELPER#

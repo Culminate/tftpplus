@@ -1,0 +1,19 @@
+#!/bin/sh -e
+# $Id: tftpd.postrm,v 1.2 2002/12/22 05:17:12 herbert Exp $
+
+case "$1" in
+abort-install | abort-upgrade | upgrade | failed-upgrade | disappear)
+	;;
+purge|remove)
+	# If netbase is not installed, then we don't need to do the remove.
+	if command -v update-inetd >/dev/null 2>&1; then
+		update-inetd --remove tftp
+	fi
+	;;
+*)
+	echo "$0: incorrect arguments: $*" >&2
+	exit 1
+	;;
+esac
+
+#DEBHELPER#

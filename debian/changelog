@@ -1,0 +1,158 @@
+netkit-tftp (0.17-18) unstable; urgency=low
+
+  * debian/control: added ${misc:Depends} to binary packages
+  * debian/compat: moved to 7
+  * Add IPv6 support, once again thanks to Mats Erik Andersson.
+    (Closes: #536509)
+  * Patch from Ubuntu (Closes: #494309), thanks Stefan Lesicnik:
+    - Return ENOTFOUND instead of EUNDEF for files that do not exist
+    - Adds debian/watch file (even when they won't happen...)
+    - debian/rules: Removes sed which adds -g (debug) option to gcc
+  * Removed '-s' from install calls in Makefiles and added dh_strip.
+    (Closes: #437617)
+
+ -- Alberto Gonzalez Iniesta <agi@inittab.org>  Fri, 24 Sep 2010 18:05:54 +0200
+
+netkit-tftp (0.17-17) unstable; urgency=low
+
+  * Require hostname for connection name (Closes: #375365)
+    Thanks Michael Welle for the patch.
+  * Don't reset the socket before sending last ACK. (Closes: #351403)
+    Thanks Michael Welle for the patch.
+  * Don't ignore make clean errors to make lintian happy.
+
+ -- Alberto Gonzalez Iniesta <agi@inittab.org>  Tue, 30 Dec 2008 15:03:15 +0100
+
+netkit-tftp (0.17-16) unstable; urgency=high
+
+  * tftpd.c: Fixed security bug that made tftpd serve files from
+    the filesystem root directory when the tftpd root directory
+    was wrongly specified. Thanks Tomasz Nowiński for finding this
+    out.
+  * tftpd.c: Return 1 (File Not Found) instead of 0 (Not defined) to conform
+    to TFTP RFC.
+  * Revert patch that allowed uploading NEW files to the server.
+    Behaving just like the man page states (Closes: #335200)
+  * Bumped Standards-Version to 3.8.0.0, no change.
+  * Removed debian/tftpd.prerm, no need for it.
+  * Removed inetd entry on package removal (Closes: #351867)
+  * Replaced netbase Depends with openbsd-inetd | inet-superserver.
+    (Closes: #401888)
+  * Mention in package description that tftpd is not suitable for PXE
+    booting. (Closes: #401288)
+
+ -- Alberto Gonzalez Iniesta <agi@inittab.org>  Tue, 05 Aug 2008 13:15:15 +0200
+
+netkit-tftp (0.17-15) unstable; urgency=low
+
+  * tftpd/tftpd.c: Fixed file mode when new files are uploaded.
+
+ -- Alberto Gonzalez Iniesta <agi@inittab.org>  Fri, 14 Oct 2005 11:33:37 +0200
+
+netkit-tftp (0.17-14) unstable; urgency=low
+
+  * Fix dyslexia problem. Actually made the default directory
+    /srv/tftp.
+  * tftpd/tftpd.c patched to allow uploading files that didn't exist
+    previously on the server. 
+    Thanks Rodrigo Steinmüller Wanderley <rwanderley@natalnet.br>
+    for finding this out and the patch.
+  * Bumped Standards-Version to 3.6.2.0, no change.
+  * Moved to debhelper compatibility 4. Created debian/compat.
+
+ -- Alberto Gonzalez Iniesta <agi@inittab.org>  Thu, 13 Oct 2005 12:14:55 +0200
+
+netkit-tftp (0.17-13) unstable; urgency=low
+
+  * Fixed typo in man page. (Closes: #310347)
+  * Changed default tftpd directory to /svr/tftp (Closes: #255204)
+
+ -- Alberto Gonzalez Iniesta <agi@inittab.org>  Tue, 12 Jul 2005 19:44:36 +0200
+
+netkit-tftp (0.17-12) unstable; urgency=low
+
+  * Changed maintainer email address
+  * Reworded tftp and tftpd Descriptions
+
+ -- Alberto Gonzalez Iniesta <agi@inittab.org>  Fri, 25 Mar 2005 19:05:49 +0100
+
+netkit-tftp (0.17-11) unstable; urgency=low
+
+  * New Maintainer. (Closes: #249716)
+  * Added Depends on netbase to tftp. (Closes: #245764)
+  * Added versioned Build-Depends on debhelper.
+  * Bumped Standards-Version to 3.6.1, no change.
+
+ -- Alberto Gonzalez Iniesta <agi@agi.as>  Wed, 19 May 2004 09:41:49 +0200
+
+netkit-tftp (0.17-10) unstable; urgency=low
+
+  * Fixed inetd service name in prerm/postrm (closes: #171178).
+
+ -- Herbert Xu <herbert@debian.org>  Sun, 22 Dec 2002 15:48:30 +1100
+
+netkit-tftp (0.17-9) unstable; urgency=low
+
+  * Always reopen socket after a get/put in tftp (closes: #130292).
+
+ -- Herbert Xu <herbert@debian.org>  Wed, 30 Jan 2002 20:56:47 +1100
+
+netkit-tftp (0.17-8) unstable; urgency=low
+
+  * Reopen socket on all errors in tftp (closes: #130292).
+
+ -- Herbert Xu <herbert@debian.org>  Mon, 28 Jan 2002 21:43:17 +1100
+
+netkit-tftp (0.17-7) unstable; urgency=low
+
+  * Call synchnet on all errors in tftp (closes: #130292).
+
+ -- Herbert Xu <herbert@debian.org>  Fri, 25 Jan 2002 19:06:31 +1100
+
+netkit-tftp (0.17-6) unstable; urgency=low
+
+  * Added note about default tftp location in README.Debian (closes: #121522).
+
+ -- Herbert Xu <herbert@debian.org>  Sat, 22 Dec 2001 13:07:55 +1100
+
+netkit-tftp (0.17-5) unstable; urgency=low
+
+  * Fixed loop condition in sendfile (closes: #92231).
+
+ -- Herbert Xu <herbert@debian.org>  Mon,  2 Apr 2001 21:38:15 +1000
+
+netkit-tftp (0.17-4) unstable; urgency=low
+
+  * Use arpa/tftp.h from glibc (closes: #88346).
+
+ -- Herbert Xu <herbert@debian.org>  Sun,  4 Mar 2001 10:23:45 +1100
+
+netkit-tftp (0.17-3) unstable; urgency=low
+
+  * Restored block == 1 check that was removed in 0.17 (closes: #88286).
+
+ -- Herbert Xu <herbert@debian.org>  Sat,  3 Mar 2001 10:19:40 +1100
+
+netkit-tftp (0.17-2) unstable; urgency=low
+
+  * Removed emacsism in this very file (closes: #74272).
+  * Merged option processing changes from Ian Jackson (closes: #74273).
+
+ -- Herbert Xu <herbert@debian.org>  Sat, 21 Oct 2000 12:12:28 +1100
+
+netkit-tftp (0.17-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Herbert Xu <herbert@debian.org>  Sat, 12 Aug 2000 12:04:31 +1000
+
+netkit-tftp (0.10-1) unstable; urgency=low
+
+  * Initial Release.
+  * Based on netkit-tftp (closes: #39450).
+  * Implemented -n and -s (closes: #23917).
+    Note that -s was done without chroot.  Instead all absolute filenames are
+    treated as relative ones.
+
+ -- Herbert Xu <herbert@debian.org>  Tue, 26 Oct 1999 12:23:51 +1000
+
