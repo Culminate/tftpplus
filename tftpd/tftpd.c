@@ -639,7 +639,7 @@ nak(int error)
 void lssend(char *lsdir)
 {
 	char dir1[100];
-	strcpy(dir1,lsdir);
+	strncpy(dir1, lsdir, sizeof(dir1));
 	struct tftphdr *dp;	//указатель на структуру отправляемых данных
 	register struct tftphdr *ap;    /* ack packet */
 	volatile u_int16_t block = 1;	
@@ -664,13 +664,11 @@ void lssend(char *lsdir)
 		dp->th_block = htons((u_short)block);	//установка типа блока
 		 
 	
-		strcpy(nbuf,"");
+		strcpy(nbuf, "");
 		for(i=0;i<512;i++)nbuf[i]='\0';
 		
-		strcpy(dirname,dirs[0]);
-		syslog(LOG_ERR, dirname);
-		strcat(dirname,dir1);
-		syslog(LOG_ERR, dirname);
+		strncpy(dirname, dirs[0], sizeof(dirname));
+		strncat(dirname, dir1, sizeof(dirname) - strlen(dir1));
 		dirpls = opendir(dirname);			//открываем папку
 		if (dirpls != NULL){
 			while ( (dirls = readdir(dirpls)) != NULL ) {	//читаем данные в папке, пока не будет NULL
@@ -693,15 +691,13 @@ void lssend(char *lsdir)
 					    dirls->d_namlen == 2)
 						continue;
 				#endif
-					strncat(nbuf,strncat(dirls->d_name," ",1),128);	//формируем строку с файлами,папками
+					strncat(nbuf, strncat(dirls->d_name, " ", 1), 128);	//формируем строку с файлами,папками
 			}
-			strcpy(str,strncat(nbuf,"\0",1));
-		}else strcpy(str,"Error: wrong folder");
+			strncpy(str, strncat(nbuf, "\0", 1), sizeof(str));
+		}else strncpy(str, "Error: wrong folder", sizeof(str));
 		
 		size = strlen(str);	//определяем длину пакета
-		//syslog(LOG_ERR, dirs[1]);
 	
-		
 		for (i = 0 ; i < size; i++){	// посимвольно записываем в буффер (может и без этого можно обойтись)
 		*ch++ = str[i];}
 send_data:
@@ -732,7 +728,6 @@ send_data:
 	} while (size == SEGSIZE);
 	sprintf(str, "%d", size);
 	openlog("TFPDDEMONKOG", LOG_PID, LOG_USER);
-	//syslog(LOG_DEBUG, str);
 	closelog();
 
 }

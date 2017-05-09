@@ -78,7 +78,7 @@ int maxtimeout = 5 * TIMEOUT;
 sigjmp_buf toplevel;
 void sendfile(int fd, char *name, char *modestr);
 void recvfile(int fd, char *name, char *modestr);
-void lsrecv(int cnt,char *name);
+void lsrecv(char *name);
 
 
 static int connected = AF_UNSPEC;	/* If non-zero, contains active address family! */
@@ -815,6 +815,7 @@ setverbose(int ign1, char *ign2[])
 	printf("Verbose mode %s.\n", verbose ? "on" : "off");
 }
 
+void
 ls(int argc, char *argv[])
 {
     char namepath[100];
@@ -826,23 +827,22 @@ ls(int argc, char *argv[])
                 printf( "failed to set non-blocking socket\n" );
 
             }
-    //if (argc>1) strcpy(namepath,argv[1]);
     if (argc>1){
-        strcpy(namepath,argv[1]);
+        strncpy(namepath, argv[1], sizeof(namepath) - 1);
         if (namepath[0] != '/'){
-            strcpy(tmpstr,"/");
-            strcat(tmpstr,namepath);
-            strcpy(namepath,tmpstr);
+            strcpy(tmpstr, "/");
+            strncat(tmpstr, namepath, sizeof(tmpstr) - strlen(namepath));
+            strncpy(namepath, tmpstr, sizeof(namepath));
         }
         if (namepath[strlen(namepath)-1] != '/'){
-            strcat(namepath,"/");
+            strcat(namepath, "/");
         }
-        if (strstr(namepath,"/../")!=NULL){
+        if (strstr(namepath, "/../") != NULL){
             printf("Folder error: Access violation \n");
-            return 0;
+            return;
         }
     }
-    if (argc == 1) strcpy(namepath,"/.\0");
+    if (argc == 1) strcpy(namepath, "/.\0");
 
-    lsrecv(argc,namepath);   //переходим в tftp.c
+    lsrecv(namepath);   //переходим в tftp.c
 }

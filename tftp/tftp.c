@@ -71,7 +71,7 @@ extern  int     maxtimeout;
 extern sigjmp_buf toplevel;
 void sendfile(int fd, char *name, char *modestr);
 void recvfile(int fd, char *name, char *modestr);
-void lsrecv(int cnt,char *name);
+void lsrecv(char *name);
 
 static struct sockaddr_storage from;	/* most recent remote address */
 static socklen_t fromlen;
@@ -446,7 +446,7 @@ printstats(const char *direction, unsigned long amount)
 	putchar('\n');
 }
 
-void lsrecv(int cnt,char *name)
+void lsrecv(char *name)
 {
     register struct tftphdr *ap;       /* data and ack packets не используется пока */
     struct tftphdr *dp;                 // структура с данными
@@ -461,7 +461,6 @@ void lsrecv(int cnt,char *name)
     ap = (struct tftphdr *)ackbuf;
     dp = (struct tftphdr *)buf;         //установка указателя на начало буфера CHAR
     volatile int size = 0;
-    char str[512];
 
     // обнуляем буфер, чтоб не было случайных лишних символов в выводе
     for(n = 0;n < 516;n++){
